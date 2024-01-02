@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resize Images</title>
+</head>
+<body>
+    <h1>Image Resizer</h1>
+    <input type="file" id="fileInput" multiple accept="image/*">
+    <label for="qualitySlider">Image Quality:</label>
+    <input type="range" id="qualitySlider" min="0" max="1" step="0.1" value="0.7">
+    <output for="qualitySlider" id="qualityOutput">0.7</output>
+    <div>
+        <label for="widthInput">Width:</label>
+        <input type="number" id="widthInput" min="1" value="150">
+    </div>
+    <div>
+        <label for="heightInput">Height:</label>
+        <input type="number" id="heightInput" min="1" value="150">
+    </div>
+    <div id="output"></div>
+    <div id="preview"></div>
+
+    <script>
+        let files = [];
+
+        function resizeImages(files, quality, width, height) {
+            const output = document.getElementById('output');
+            const preview = document.getElementById('preview');
+
+            output.innerHTML = ''; // Clear previous results
+            preview.innerHTML = ''; // Clear previous previews
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const img = new Image();
+
+                    img.onload = function () {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        const newWidth = width || img.width;
+                        const newHeight = height || img.height;
+
+                        canvas.width = newWidth;
+                        canvas.height = newHeight;
+
+                        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+                        const newDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+                        const originalSize = (file.size / 1024).toFixed(2); // in KB
+                        const newSize = (newDataUrl.length / 1024).toFixed(2); // in KB
+
+                        const downloadButton = document.createElement('a');
+                        downloadButton.href = newDataUrl;
+                        downloadButton.download = `resized_${file.name}`;
+                        downloadButton.textContent = `Download ${file.name} (${originalSize} KB -> ${newSize} KB)`;
+
+                        // Preview
+                        const container = document.createElement('div');
+                        container.style.display = 'flex';
+                        container.style.gap = '20px';
+
+                        const originalImg = document.createElement('img');
+                        originalImg.src = e.target.result;
+                        originalImg.title = 'Original Image';
+                        originalImg.width = 150;
+                        originalImg.height = 150;
+
+                        const resizedImg = document.createElement('img');
+                        resizedImg.src = newDataUrl;
+                        resizedImg.title = 'Resized Image';
+                        resizedImg.width = 150;
+                        resizedImg.height = 150;
+
+                        const originalSizeText = document.createElement('p');
+                        originalSizeText.textContent = `Original Size: ${originalSize} KB`;
+
+                        const newSizeText = document.createElement('p');
+                        newSizeText.textContent = `Resized Size: ${newSize} KB`;
+
+                        const originalImageContainer = document.createElement('div');
+                        originalImageContainer.appendChild(originalImg);
+                        originalImageContainer.appendChild(originalSizeText);
+
+                        container.appendChild(originalImageContainer);
+
+                        const newImageContainer = document.createElement('div');
+                        newImageContainer.appendChild(resizedImg);
+                        newImageContainer.appendChild(newSizeText);
+
+                        container.appendChild(newImageContainer);
+
+                        const downloadContainer = document.createElement('div');
+                        downloadContainer.appendChild(container)
+                        downloadContainer.appendChild(downloadButton)
+
+                        preview.appendChild(downloadContainer);
+                    };
+
+                    img.src = e.target.result;
+                };
+
+                reader.readAsDataURL(file);
+            });
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            const quality = parseFloat(document.getElementById('qualitySlider').value);
+            const width = parseInt(document.getElementById('widthInput').value);
+            const height = parseInt(document.getElementById('heightInput').value);
+
+            document.getElementById('qualityOutput').textContent = quality.toFixed(1);
+            files = e.target.files;
+            resizeImages(files, quality, width, height);
+        });
+
+        document.getElementById('qualitySlider').addEventListener('input', function () {
+            const quality = parseFloat(this.value);
+            document.getElementById('qualityOutput').textContent = quality.toFixed(1);
+            const width = parseInt(document.getElementById('widthInput').value);
+            const height = parseInt(document.getElementById('heightInput').value);
+            resizeImages(files, quality, width, height);
+        });
+
+        document.getElementById('widthInput').addEventListener('input', function () {
+            const width = parseInt(this.value);
+            const quality = parseFloat(document.getElementById('qualitySlider').value);
+            const height = parseInt(document.getElementById('heightInput').value);
+            resizeImages(files, quality, width, height);
+        });
+
+        document.getElementById('heightInput').addEventListener('input', function () {
+            const height = parseInt(this.value);
+            const quality = parseFloat(document.getElementById('qualitySlider').value);
+            const width = parseInt(document.getElementById('widthInput').value);
+            resizeImages(files, quality, width, height);
+        });
+    </script>
+</body>
+</html>
